@@ -21,3 +21,20 @@ git init
 ```
 
 copy git ignore to root folder then git commit.
+
+## 2. App Entry
+
+1. Install morgan
+
+    ```javascript
+    npm install morgan
+    npm install -D @types/morgan
+
+    ```
+
+2. Create app entry files
+    - app.ts
+    - index.ts
+    - routes/index.ts
+
+3. tsconfig.json adjustment
