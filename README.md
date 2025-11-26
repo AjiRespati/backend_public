@@ -46,3 +46,5 @@ copy git ignore to root folder then git commit.
 ## 5. Add Products
 
 ## 6. Add Sales
+
+## 7. Add Report
