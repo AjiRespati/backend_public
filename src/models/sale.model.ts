@@ -1,22 +1,24 @@
 import { DataTypes, Model } from 'sequelize';
 import sequelize from '../config/db';
 import User from './user.model';
-import Customer from './customer.model';
 
-export default class Sale extends Model {
+class Sale extends Model {
   public id!: number;
-  public total!: number;
   public userId!: number;
-  public customerId!: number;
+  public total!: number;
+  public createdAt!: Date;
 }
 
 Sale.init(
   {
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
-    total: { type: DataTypes.DECIMAL(10, 2), allowNull: false },
+    userId: { type: DataTypes.INTEGER, allowNull: false },
+    total: { type: DataTypes.FLOAT, allowNull: false },
   },
-  { sequelize, modelName: 'Sale' }
+  { sequelize, modelName: 'Sale', tableName: 'sales' }
 );
 
-Sale.belongsTo(User, { foreignKey: 'userId' });
-Sale.belongsTo(Customer, { foreignKey: 'customerId' });
+// Relation: Sale belongs to User
+Sale.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+export default Sale;
