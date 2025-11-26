@@ -1,0 +1,23 @@
+# DOCUMENTATIONS OF LIVES
+
+## 1. INITIAL BACKEND
+
+### DOWNLOAD NODEJS
+
+<https://nodejs.org/en/download>
+Download nodejs version 22.21.1
+agak lama, download ms visual studio 4gb.
+
+### Initialize backend
+
+```javascript
+mkdir backend && cd backend
+npm init -y
+npm i express sequelize pg pg-hstore jsonwebtoken bcrypt winston multer dotenv cors
+npm i -D typescript ts-node-dev @types/node @types/express @types/jsonwebtoken @types/bcrypt @types/multer
+npx tsc --init
+
+git init
+```
+
+copy git ignore to root folder then git commit.
