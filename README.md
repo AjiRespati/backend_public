@@ -38,3 +38,5 @@ copy git ignore to root folder then git commit.
     - routes/index.ts
 
 3. tsconfig.json adjustment
+
+## 3. Add Winston, configs, middlewares, initial model, initial controller
