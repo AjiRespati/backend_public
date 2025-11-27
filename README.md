@@ -52,3 +52,5 @@ copy git ignore to root folder then git commit.
 ## 8. Finishing Auth
 
 ## 9. Email verification, forgot password
+
+## 10. Request Logger

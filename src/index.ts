@@ -9,6 +9,7 @@ import routes from './routes';
 import sequelize from './config/db';
 import { errorHandler } from './middlewares/error.middleware';
 import { applySecurityMiddleware } from './middlewares/security.middleware';
+import { requestLogger } from './middlewares/requestLogger.middleware';
 
 dotenv.config();
 
@@ -21,6 +22,9 @@ app.use(express.urlencoded({ extended: true }));
 
 // Apply security protection
 applySecurityMiddleware(app);
+
+// 🧾 Detailed Request Logger
+app.use(requestLogger);
 
 // HTTP logging middleware (Morgan + Winston)
 app.use(
