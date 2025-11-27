@@ -6,6 +6,7 @@ import {
   logout,
   requestPasswordReset,
   resetPassword,
+  verifyEmail,
 } from "../controllers/auth.controller";
 import { authenticate } from "../middlewares/auth.middleware";
 
@@ -15,9 +16,8 @@ router.post("/register", register);
 router.post("/login", login);
 router.post("/refresh", refresh);
 router.post("/logout", authenticate, logout);
-
-// password reset
 router.post("/request-reset", requestPasswordReset);
 router.post("/reset-password/:token", resetPassword);
+router.get("/verify-email/:token", verifyEmail);
 
 export default router;

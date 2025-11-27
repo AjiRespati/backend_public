@@ -8,9 +8,10 @@ import {
   verifyToken,
 } from "../utils/token.utils";
 import crypto from "crypto";
+import { sendMail } from "../utils/mailer";
 
 // =============================
-// REGISTER
+// REGISTER + EMAIL VERIFICATION
 // =============================
 export const register = async (req: Request, res: Response) => {
   const { name, email, password, role } = req.body;
@@ -18,9 +19,48 @@ export const register = async (req: Request, res: Response) => {
   if (existing) throw createError(400, "Email already exists");
 
   const hashed = await bcrypt.hash(password, 10);
-  const user = await User.create({ name, email, password: hashed, role });
-  res.status(201).json({ success: true, data: user });
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+
+  const user = await User.create({
+    name,
+    email,
+    password: hashed,
+    role,
+    verificationToken,
+    isVerified: false,
+  });
+
+  const verificationLink = `https://www.ajirespati.com/verify-email/${verificationToken}`;
+
+  await sendMail(
+    email,
+    "Verify your Aji Respati POS account",
+    `
+    <h2>Welcome to Aji Respati POS!</h2>
+    <p>Click below to verify your email:</p>
+    <a href="${verificationLink}">Verify Email</a>
+    <p>This link will expire in 24 hours.</p>
+    `
+  );
+
+  res.status(201).json({
+    success: true,
+    message: "Registration successful! Please verify your email.",
+  });
 };
+
+// =============================
+// EMAIL VERIFICATION
+// =============================
+export const verifyEmail = async (req: Request, res: Response) => {
+  const { token } = req.params;
+  const user = await User.findOne({ where: { verificationToken: token } });
+  if (!user) throw createError(400, "Invalid or expired verification token");
+
+  await user.update({ isVerified: true, verificationToken: null });
+  res.json({ success: true, message: "Email successfully verified!" });
+};
+
 
 // =============================
 // LOGIN
@@ -70,7 +110,7 @@ export const logout = async (req: Request, res: Response) => {
 };
 
 // =============================
-// PASSWORD RESET REQUEST
+// PASSWORD RESET REQUEST (with email)
 // =============================
 export const requestPasswordReset = async (req: Request, res: Response) => {
   const { email } = req.body;
@@ -80,11 +120,22 @@ export const requestPasswordReset = async (req: Request, res: Response) => {
   const token = crypto.randomBytes(32).toString("hex");
   await user.update({ resetToken: token });
 
-  // Normally send via email, but for now return token directly
+  const resetLink = `https://www.ajirespati.com/reset-password/${token}`;
+
+  await sendMail(
+    email,
+    "Reset your Aji Respati POS password",
+    `
+    <h2>Reset your password</h2>
+    <p>Click below to reset your password:</p>
+    <a href="${resetLink}">Reset Password</a>
+    <p>If you didn’t request this, you can ignore this email.</p>
+    `
+  );
+
   res.json({
     success: true,
-    message: "Password reset link generated",
-    resetLink: `/api/auth/reset-password/${token}`,
+    message: "Password reset link sent to your email",
   });
 };
 

@@ -9,6 +9,8 @@ class User extends Model {
   public role!: "admin" | "cashier";
   public refreshToken?: string | null;
   public resetToken?: string | null;
+  public verificationToken?: string | null;
+  public isVerified!: boolean;
 }
 
 User.init(
@@ -20,6 +22,8 @@ User.init(
     role: { type: DataTypes.ENUM("admin", "cashier"), defaultValue: "cashier" },
     refreshToken: { type: DataTypes.STRING, allowNull: true },
     resetToken: { type: DataTypes.STRING, allowNull: true },
+    verificationToken: { type: DataTypes.STRING, allowNull: true },
+    isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
   },
   { sequelize, modelName: "User", tableName: "users" }
 );
