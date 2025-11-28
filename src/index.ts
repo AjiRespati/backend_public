@@ -10,6 +10,7 @@ import sequelize from './config/db';
 import { errorHandler } from './middlewares/error.middleware';
 import { applySecurityMiddleware } from './middlewares/security.middleware';
 import { requestLogger } from './middlewares/requestLogger.middleware';
+import "./models"; // ✅ Important — loads all models and associations
 
 dotenv.config();
 

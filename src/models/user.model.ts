@@ -1,16 +1,16 @@
 import { DataTypes, Model } from "sequelize";
 import sequelize from "../config/db";
 
-class User extends Model {
-  public id!: number;
-  public name!: string;
-  public email!: string;
-  public password!: string;
-  public role!: "admin" | "cashier";
-  public refreshToken?: string | null;
-  public resetToken?: string | null;
-  public verificationToken?: string | null;
-  public isVerified!: boolean;
+export default class User extends Model {
+  declare id: number;
+  declare name: string;
+  declare email: string;
+  declare role: string;
+  declare refreshToken: string;
+  declare resetToken: string;
+  declare verificationToken: string;
+  declare password: string;
+  declare verified: boolean;
 }
 
 User.init(
@@ -25,7 +25,10 @@ User.init(
     verificationToken: { type: DataTypes.STRING, allowNull: true },
     isVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
   },
-  { sequelize, modelName: "User", tableName: "users" }
+  {
+    sequelize,
+    modelName: "User",
+    tableName: "users",
+    timestamps: true,
+  }
 );
-
-export default User;

@@ -1,54 +1,64 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import sequelize from '../config/db';
 import Sale from '../models/sale.model';
 import SaleItem from '../models/saleItem.model';
 import Product from '../models/product.model';
 import { createError } from '../middlewares/error.middleware';
 
-export const createSale = async (req: Request, res: Response) => {
-  const { items } = req.body; // [{productId, quantity}]
-  const userId = (req as any).user.id;
-
-  const transaction = await sequelize.transaction();
-
+export const createSale = async (req: Request, res: Response, next: NextFunction) => {
+  const t = await sequelize.transaction();
   try {
-    let total = 0;
-    const sale = await Sale.create({ userId, total: 0 }, { transaction });
+    const { items, total } = req.body;
+    const userId = (req as any).user?.id || null;
+
+    if (!Array.isArray(items) || typeof total !== "number") {
+      throw createError(400, "Invalid sale data");
+    }
+
+    const sale = await Sale.create(
+      { userId, total },
+      { transaction: t }
+    );
+
+    if (!sale || !sale.id) {
+      throw createError(500, "Failed to create Sale record");
+    }
 
     for (const item of items) {
-      const product = await Product.findByPk(item.productId);
-      if (!product) throw createError(404, `Product not found: ${item.productId}`);
+      const { productId, quantity, price } = item;
+      if (!productId || !quantity || !price)
+        throw createError(400, "Incomplete sale item data");
 
-      if (product.stock < item.quantity)
-        throw createError(400, `Insufficient stock for ${product.name}`);
-
-      const itemTotal = product.price * item.quantity;
-      total += itemTotal;
+      const product = await Product.findByPk(productId, { transaction: t });
+      if (!product) throw createError(404, "Product not found");
+      if (product.stock < quantity)
+        throw createError(400, `Not enough stock for ${product.name}`);
 
       await SaleItem.create(
         {
           saleId: sale.id,
-          productId: product.id,
-          quantity: item.quantity,
-          price: product.price,
+          productId,
+          quantity,
+          price,
         },
-        { transaction }
+        { transaction: t }
       );
 
-      // Deduct stock
-      await product.update({ stock: product.stock - item.quantity }, { transaction });
+      await product.update(
+        { stock: product.stock - quantity },
+        { transaction: t }
+      );
     }
 
-    // Update sale total
-    await sale.update({ total }, { transaction });
-
-    await transaction.commit();
-    res.status(201).json({ success: true, saleId: sale.id, total });
-  } catch (error) {
-    await transaction.rollback();
-    throw createError(500, 'Sale transaction failed', error);
+    await t.commit();
+    res.status(201).json({ success: true, message: "Sale recorded successfully" });
+  } catch (error: any) {
+    await t.rollback();
+    console.error("Sale transaction failed:", error);
+    next(createError(500, error.message || "Sale transaction failed"));
   }
 };
+
 
 export const getSales = async (req: Request, res: Response) => {
   const sales = await Sale.findAll({

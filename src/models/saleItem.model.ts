@@ -1,14 +1,12 @@
-import { DataTypes, Model } from 'sequelize';
-import sequelize from '../config/db';
-import Product from './product.model';
-import Sale from './sale.model';
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../config/db";
 
-class SaleItem extends Model {
-  public id!: number;
-  public saleId!: number;
-  public productId!: number;
-  public quantity!: number;
-  public price!: number;
+export default class SaleItem extends Model {
+  declare id: number;
+  declare saleId: number;
+  declare productId: number;
+  declare quantity: number;
+  declare price: number;
 }
 
 SaleItem.init(
@@ -19,11 +17,10 @@ SaleItem.init(
     quantity: { type: DataTypes.INTEGER, allowNull: false },
     price: { type: DataTypes.FLOAT, allowNull: false },
   },
-  { sequelize, modelName: 'SaleItem', tableName: 'sale_items' }
+  {
+    sequelize,
+    modelName: "SaleItem",
+    tableName: "sale_items",
+    timestamps: true,
+  }
 );
-
-// Relationships
-SaleItem.belongsTo(Sale, { foreignKey: 'saleId', as: 'sale' });
-SaleItem.belongsTo(Product, { foreignKey: 'productId', as: 'product' });
-
-export default SaleItem;

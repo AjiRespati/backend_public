@@ -1,12 +1,12 @@
-import { DataTypes, Model } from 'sequelize';
-import sequelize from '../config/db';
+import { DataTypes, Model } from "sequelize";
+import sequelize from "../config/db";
 
-class Product extends Model {
-  public id!: number;
-  public name!: string;
-  public price!: number;
-  public stock!: number;
-  public image!: string | null;
+export default class Product extends Model {
+  declare id: number;
+  declare name: string;
+  declare price: number;
+  declare stock: number;
+  declare imageUrl: string | null;
 }
 
 Product.init(
@@ -14,10 +14,13 @@ Product.init(
     id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true },
     name: { type: DataTypes.STRING, allowNull: false },
     price: { type: DataTypes.FLOAT, allowNull: false },
-    stock: { type: DataTypes.INTEGER, defaultValue: 0 },
-    image: { type: DataTypes.STRING, allowNull: true },
+    stock: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    imageUrl: { type: DataTypes.STRING, allowNull: true },
   },
-  { sequelize, modelName: 'Product', tableName: 'products' }
+  {
+    sequelize,
+    modelName: "Product",
+    tableName: "products",
+    timestamps: true,
+  }
 );
-
-export default Product;
