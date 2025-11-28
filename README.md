@@ -54,3 +54,5 @@ copy git ignore to root folder then git commit.
 ## 9. Email verification, forgot password
 
 ## 10. Request Logger
+
+## 11. Sales Report

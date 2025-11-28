@@ -4,6 +4,7 @@ import Sale from '../models/sale.model';
 import SaleItem from '../models/saleItem.model';
 import Product from '../models/product.model';
 import { createError } from '../middlewares/error.middleware';
+import { Op, col, fn, literal } from 'sequelize';
 
 export const createSale = async (req: Request, res: Response, next: NextFunction) => {
   const t = await sequelize.transaction();
@@ -59,7 +60,6 @@ export const createSale = async (req: Request, res: Response, next: NextFunction
   }
 };
 
-
 export const getSales = async (req: Request, res: Response) => {
   const sales = await Sale.findAll({
     include: [
@@ -77,4 +77,58 @@ export const getSaleById = async (req: Request, res: Response) => {
   });
   if (!sale) throw createError(404, 'Sale not found');
   res.json({ success: true, data: sale });
+};
+
+export const getSalesStats = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    // 1️⃣ Summary
+    const [summary] = await Sale.findAll({
+      attributes: [
+        [fn("COUNT", col("id")), "totalSales"],
+        [fn("SUM", col("total")), "totalRevenue"],
+      ],
+      raw: true,
+    });
+
+    // 2️⃣ Revenue per day
+    const dailySales = await Sale.findAll({
+      attributes: [
+        [fn("DATE_TRUNC", "day", col("createdAt")), "date"],
+        [fn("SUM", col("total")), "revenue"],
+      ],
+      where: {
+        createdAt: {
+          [Op.gte]: literal("CURRENT_DATE - INTERVAL '7 days'"),
+        },
+      },
+      group: [fn("DATE_TRUNC", "day", col("createdAt"))],
+      order: [[fn("DATE_TRUNC", "day", col("createdAt")), "ASC"]],
+      raw: true,
+    });
+
+    // 3️⃣ Top products (disambiguated)
+    const topProducts = await SaleItem.findAll({
+      attributes: [
+        "productId",
+        [fn("SUM", col("SaleItem.quantity")), "totalSold"],
+        [literal('SUM("SaleItem"."quantity" * "SaleItem"."price")'), "revenue"],
+      ],
+      include: [{ model: Product, attributes: ["name"] }],
+      group: ["SaleItem.productId", "Product.id"],
+      order: [[literal('SUM("SaleItem"."quantity")'), "DESC"]],
+      limit: 5,
+      raw: true,
+      nest: true,
+    });
+
+    res.json({
+      success: true,
+      summary,
+      dailySales,
+      topProducts,
+    });
+  } catch (error: any) {
+    console.error("Error in getSalesStats:", error);
+    next(createError(500, error.message || "Failed to fetch sales stats"));
+  }
 };
