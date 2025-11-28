@@ -81,7 +81,18 @@ export const getSaleById = async (req: Request, res: Response) => {
 
 export const getSalesStats = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    // 1️⃣ Summary
+    // 🧭 1️⃣ Determine range
+    const range = (req.query.range as string) || "7";
+    const days = parseInt(range, 10) || 7;
+
+    // 🧮 2️⃣ Date filter
+    const dateFilter = {
+      createdAt: {
+        [Op.gte]: literal(`CURRENT_DATE - INTERVAL '${days} days'`),
+      },
+    };
+
+    // 🧾 3️⃣ Summary
     const [summary] = await Sale.findAll({
       attributes: [
         [fn("COUNT", col("id")), "totalSales"],
@@ -90,23 +101,19 @@ export const getSalesStats = async (req: Request, res: Response, next: NextFunct
       raw: true,
     });
 
-    // 2️⃣ Revenue per day
+    // 📈 4️⃣ Revenue per day
     const dailySales = await Sale.findAll({
       attributes: [
         [fn("DATE_TRUNC", "day", col("createdAt")), "date"],
         [fn("SUM", col("total")), "revenue"],
       ],
-      where: {
-        createdAt: {
-          [Op.gte]: literal("CURRENT_DATE - INTERVAL '7 days'"),
-        },
-      },
+      where: dateFilter,
       group: [fn("DATE_TRUNC", "day", col("createdAt"))],
       order: [[fn("DATE_TRUNC", "day", col("createdAt")), "ASC"]],
       raw: true,
     });
 
-    // 3️⃣ Top products (disambiguated)
+    // 🏆 5️⃣ Top products (disambiguated + ordered by sum)
     const topProducts = await SaleItem.findAll({
       attributes: [
         "productId",
@@ -114,6 +121,7 @@ export const getSalesStats = async (req: Request, res: Response, next: NextFunct
         [literal('SUM("SaleItem"."quantity" * "SaleItem"."price")'), "revenue"],
       ],
       include: [{ model: Product, attributes: ["name"] }],
+      where: dateFilter,
       group: ["SaleItem.productId", "Product.id"],
       order: [[literal('SUM("SaleItem"."quantity")'), "DESC"]],
       limit: 5,
@@ -123,6 +131,7 @@ export const getSalesStats = async (req: Request, res: Response, next: NextFunct
 
     res.json({
       success: true,
+      range: days,
       summary,
       dailySales,
       topProducts,
