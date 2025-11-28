@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import bcrypt from "bcrypt";
 import User from "../models/user.model";
 import { createError } from "../middlewares/error.middleware";
@@ -134,15 +134,15 @@ export const refresh = async (req: Request, res: Response) => {
   try {
     verifyToken(token, process.env.JWT_REFRESH_SECRET!);
     const accessToken = generateAccessToken({
-      id: user.id, 
-      name: user.name, 
-      email: user.email, 
+      id: user.id,
+      name: user.name,
+      email: user.email,
       role: user.role
     });
     const refreshToken = generateRefreshToken({
-      id: user.id, 
-      name: user.name, 
-      email: user.email, 
+      id: user.id,
+      name: user.name,
+      email: user.email,
       role: user.role
     });
     res.json({ success: true, accessToken, refreshToken });
@@ -154,10 +154,14 @@ export const refresh = async (req: Request, res: Response) => {
 // =============================
 // LOGOUT
 // =============================
-export const logout = async (req: Request, res: Response) => {
-  const user = await User.findByPk((req as any).user.id);
-  if (user) await user.update({ refreshToken: null });
-  res.json({ success: true, message: "Logged out successfully" });
+export const logout = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const { userId } = (req as any).user;
+    await User.update({ refreshToken: null }, { where: { id: userId } });
+    res.json({ success: true, message: "Logged out successfully" });
+  } catch (error: any) {
+    next(createError(500, error.message));
+  }
 };
 
 // =============================
