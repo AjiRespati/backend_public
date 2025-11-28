@@ -133,8 +133,19 @@ export const refresh = async (req: Request, res: Response) => {
 
   try {
     verifyToken(token, process.env.JWT_REFRESH_SECRET!);
-    const accessToken = generateAccessToken({ id: user.id, role: user.role });
-    res.json({ success: true, accessToken });
+    const accessToken = generateAccessToken({
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role
+    });
+    const refreshToken = generateRefreshToken({
+      id: user.id, 
+      name: user.name, 
+      email: user.email, 
+      role: user.role
+    });
+    res.json({ success: true, accessToken, refreshToken });
   } catch {
     throw createError(403, "Expired or invalid refresh token");
   }
