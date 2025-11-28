@@ -65,20 +65,60 @@ export const verifyEmail = async (req: Request, res: Response) => {
 // =============================
 // LOGIN
 // =============================
+
 export const login = async (req: Request, res: Response) => {
   const { email, password } = req.body;
+
+  // Find user by email
   const user = await User.findOne({ where: { email } });
   if (!user) throw createError(404, "User not found");
 
-  const valid = await bcrypt.compare(password, user.password);
+  // Ensure password field exists
+  const storedHash =
+    user.password ||
+    (user.getDataValue && user.getDataValue("password")) ||
+    null;
+
+  if (!storedHash) {
+    console.error("⚠️ Missing password field on user instance:", user.toJSON());
+    throw createError(500, "User record corrupted: no password field");
+  }
+
+  // Compare password safely
+  const valid = await bcrypt.compare(password, storedHash);
   if (!valid) throw createError(401, "Invalid credentials");
 
-  const accessToken = generateAccessToken({ id: user.id, role: user.role });
-  const refreshToken = generateRefreshToken({ id: user.id, role: user.role });
+  // Check verification state
+  if (!user.getDataValue("isVerified"))
+    throw createError(403, "Please verify your email before logging in");
+
+  // Generate tokens
+  const accessToken = generateAccessToken({
+    id: user.getDataValue("id"),
+    name: user.getDataValue("name"),
+    email: user.getDataValue("email"),
+    role: user.getDataValue("role"),
+  });
+  const refreshToken = generateRefreshToken({
+    id: user.getDataValue("id"),
+    name: user.getDataValue("name"),
+    email: user.getDataValue("email"),
+    role: user.getDataValue("role"),
+  });
 
   await user.update({ refreshToken });
 
-  res.json({ success: true, accessToken, refreshToken });
+  res.json({
+    success: true,
+    accessToken,
+    refreshToken,
+    user: {
+      id: user.getDataValue("id"),
+      name: user.getDataValue("name"),
+      email: user.getDataValue("email"),
+      role: user.getDataValue("role"),
+    },
+  });
 };
 
 // =============================
