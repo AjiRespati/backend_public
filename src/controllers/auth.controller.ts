@@ -145,6 +145,9 @@ export const refresh = async (req: Request, res: Response) => {
       email: user.email,
       role: user.role
     });
+
+    await user.update({ refreshToken });
+
     res.json({ success: true, accessToken, refreshToken });
   } catch {
     throw createError(403, "Expired or invalid refresh token");
