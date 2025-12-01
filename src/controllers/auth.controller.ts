@@ -159,9 +159,11 @@ export const refresh = async (req: Request, res: Response) => {
 // =============================
 export const logout = async (req: Request, res: Response, next: NextFunction) => {
   try {
-    const { userId } = (req as any).user;
+    const userId  = (req as any).user.id;
     await User.update({ refreshToken: null }, { where: { id: userId } });
+
     res.json({ success: true, message: "Logged out successfully" });
+    
   } catch (error: any) {
     next(createError(500, error.message));
   }
